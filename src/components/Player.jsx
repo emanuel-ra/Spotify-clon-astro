@@ -1,5 +1,6 @@
-import { useRef, useState } from "react";
-
+import { useEffect, useRef, useState } from "react";
+import { usePlayerStore } from "@/store/playerStore";
+import { Slider } from "./Slider";
 export const Pause = ({ className }) => (
   <svg
     className={className}
@@ -57,39 +58,98 @@ export const Volume = () => (
   </svg>
 );
 
+const CurrentSong = ({ image, title, artists }) => {
+  return (
+    <div
+      className={`
+        flex items-center gap-5 relative
+        overflow-hidden        
+      `}
+    >
+      <picture
+        className={`w-16 h-16 bg-zinc-800 rounded-md shadow-lg overflow-hidden`}
+      >
+        <img src={image} alt={title} />
+      </picture>
 
-export function Player () {
-    const [isPlaying, setIsPlaying] = useState(false)
-    const [currentSong, setCurrentSong] = useState(null)
-    const audioRef = useRef()
+      <div className={`flex flex-col`}>
+        <h3 className={`font-semibold text-sm block"`}>{title}</h3>
 
-    const handleClick = () => {
-        if(isPlaying) {
-            audioRef.current.pause()
-        }else{
-            audioRef.current.src = `/music/1/01.mp3`
-            audioRef.current.play()
-            audioRef.current.volume = 0.1
-        }        
-        setIsPlaying(!isPlaying)
+        <span className="text-xs opacity-80">
+          {artists?.join(", ")}
+        </span>
+      </div>
+    </div>
+  );
+};
+
+const VolumeControl = () => {
+  const  volume  = usePlayerStore((state) => state.volume);
+  const setVolume  = usePlayerStore((state) => state.setVolume);
+  
+  return (
+    <div className={`flex justify-center gap-x-2`}>
+      {volume < 0.1 ? <VolumeSilence />:<Volume /> }
+      <Slider
+        defaultChecked={[100]}
+        max={100}
+        min={0}
+        className={`w-[95px]`}
+        onValueChange={(value) => {
+          const [newVolumen] = value;
+          const volumeValue = newVolumen / 100;
+          setVolume(volumeValue)
+        }}
+      />
+    </div>
+  );
+};
+export function Player() {
+  const { currentMusic, isPlaying, setIsPlaying, setCurrentMusic,volume } =
+    usePlayerStore((state) => state);
+  const volumeRef = useRef(1);
+  const audioRef = useRef();
+
+  useEffect(() => {
+    isPlaying ? audioRef.current.play() : audioRef.current.pause();
+  }, [isPlaying]);
+
+  useEffect(() =>{
+    audioRef.current.volume = volume;
+  },[volume])
+
+  useEffect(() => {
+    const { song, playlist, songs } = currentMusic;
+    if (song) {
+      const src = `/music/${playlist?.id}/0${song.id}.mp3`;
+      audioRef.current.src = src;
+      audioRef.current.play();
+      audioRef.current.volume = volumeRef.current;
     }
-    return (
-        <div className={`flex flex-row justify-between w-full px-4 z-50`}>
-            <div>
-                CurrentSong...
-            </div>
-            <div className={`grid place-content-center gap-4 flex-1`}>
-                <div className="flex justify-center">
-                    <button className="bg-white rounded-full p-2" onClick={handleClick}>
-                        {isPlaying ? <Pause />:<Play />}                        
-                    </button>
-                </div>
-            </div>
-            <div>
-                Volumen
-            </div>
+  }, [currentMusic]);
 
-            <audio   ref={audioRef} />
+  const handleClick = () => {
+    setIsPlaying(!isPlaying);
+  };
+  return (
+    <div className={`flex flex-row justify-between w-full px-4 z-50`}>
+      <div>
+        <CurrentSong {...currentMusic.song} />
+      </div>
+
+      <div className={`grid place-content-center gap-4 flex-1`}>
+        <div className="flex justify-center">
+          <button className="bg-white rounded-full p-2" onClick={handleClick}>
+            {isPlaying ? <Pause /> : <Play />}
+          </button>
         </div>
-    )
+      </div>
+
+      <div className="grid place-content-center">
+        <VolumeControl />
+      </div>
+
+      <audio ref={audioRef} />
+    </div>
+  );
 }
