@@ -1,5 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import MusicsTable from '@/components/MusicsTable.astro';
+import { CardPlayButton } from '@/components/CardPlayBytton';
 import { allPlaylists, songs } from '@/lib/data';
 
 // * GET ID AS PARAMETER
@@ -41,7 +43,7 @@ const playListSongs = songs.filter(song => song.albumId === playlist?.albumId)
                             <span>{playlist?.artists.join(",")}</span>
                         </div>
                         <p class="mt-1">
-                            <span class="text-white">50 canciones</span>, 3 h aproximadamente
+                            <span class="text-white">{playListSongs.length} canciones</span>, 3 h aproximadamente
                         </p>
                     </div>
     
@@ -50,19 +52,25 @@ const playListSongs = songs.filter(song => song.albumId === playlist?.albumId)
             </div>
 
         </header>
-
-        
-    
         <!-- <PageHeader /> -->
+
+        <div class="pl-6 mt-6">
+            <CardPlayButton id={id} client:load size="large" />
+        </div>
+
+       
         <div class="relative z-10 px-6 pt-10">
-          
+           
         </div>
 
         <div 
             class="absolute inset-0 bg-gradient-to-t from-zinc-900 via-zinc-900bg-zinc-500 -z-20">            
 
         </div>
+
+        <section class="p-6">
+            <MusicsTable songs={playListSongs} />
+        </section>
     </div>
 
-    <style></style>
 </Layout>
